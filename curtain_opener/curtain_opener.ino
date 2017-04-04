@@ -19,8 +19,8 @@ const int lightSensorPin = A0;
 
 // motors
 const int motPwm = 10;
-const int motIn1 = 11;
-const int motIn2 = 12;
+const int motIn1 = 12;
+const int motIn2 = 11;
 const int motStandby = 13; //Pull high to enable driver
 
 // states
@@ -31,14 +31,9 @@ int minDownState = 0;
 int openCurtainState = 0;
 int closeCurtainState = 0;
 int okState = 0;
-int curtainState = 0;
+boolean curtainState = 0; //1 closed, 0 open
 int dispOn = 1;
 int lightLevel = 0;
-/*
-  bool driverIn1 = 0;//(1,2), (L,H) CCW, (H,L) CW
-  bool driverIn2 = 0;
-  bool driverStandby = 0; //0 standby, 1 enable
-*/
 
 // Timing
 int delayTime = 500;
@@ -92,8 +87,11 @@ void loop() {
   // Poll the buttons to see if any are pressed
   buttonPoll();
 
-
-
+  if (curtainState == 1 && (currentTime.hour() == alarm.hour())) {
+    openCurtain();
+  } else if (curtainState == 0 && lightLevel <= 150) {
+    closeCurtain();
+  }
 
   // Make decisions based on what needs to be done
 
@@ -239,6 +237,7 @@ void closeCurtain() {
     analogWrite(motPwm, 191);
   } while ((millis() - startTime) < openTime);
   digitalWrite(motStandby, 0);
+  curtainState = digitalRead(curtainPin);
 }
 
 void openCurtain() {
@@ -252,6 +251,7 @@ void openCurtain() {
   int endTime = millis();
   openTime = endTime - startTime;
   digitalWrite(motStandby, 0);
+  curtainState = digitalRead(curtainPin);
 }
 
 
