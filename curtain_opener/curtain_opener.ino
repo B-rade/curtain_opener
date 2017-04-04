@@ -18,7 +18,10 @@ const int curtainPin = 9;
 const int lightSensorPin = A0;
 
 // motors
-
+const int motPwm = 10;
+const int motIn1 = 11;
+const int motIn2 = 12;
+const int motStandby = 13;
 
 // states
 int hrUpState = 0;
@@ -31,6 +34,8 @@ int okState = 0;
 int curtainState = 0;
 int dispOn = 1;
 int lightLevel = 0;
+boolean driverIn1 = 0;
+boolean driverIn2 = 0;
 
 // delayTime
 int delayTime = 500;
