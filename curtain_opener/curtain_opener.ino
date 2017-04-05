@@ -7,7 +7,7 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 RTC_DS3231 rtc;
 
 // button pins
-const int hrUpPin = 0;
+const int hrUpPin = 2;
 const int hrDownPin = 3;
 const int minUpPin = 4;
 const int minDownPin = 5;
@@ -37,7 +37,7 @@ int lightLevel = 0;
 
 // Timing
 int delayTime = 500;
-int openTime = 0;
+int openTime = 20000;
 
 // alarm time set by default to 10:00 AM
 DateTime alarm (delayTime, 1, 1, 10, 0, 0);
@@ -75,28 +75,33 @@ void setup() {
 
 void loop() {
 
-  // this executes every 10 seconds
+  // this executes every 5 seconds
   if ((currentTime + TimeSpan(0, 0, 0, 5)).unixtime() < rtc.now().unixtime()) {
+    // see if the alarm was passed
+    if (alarm.unixtime() >= currentTime.unixtime() && alarm.unixtime() <= rtc.now().unixtime()) {
+      openCurtainFull();
+    }
+    
     currentTime = rtc.now();
     updateTime(currentTime);
 
     // Poll the light-level
     lightPoll();
+
+    // maybe add logic to check time as well?
+    if (lightLevel <= 150) {
+      closeCurtainFull();
+    }
   }
 
   // Poll the buttons to see if any are pressed
   buttonPoll();
 
-  if (curtainState == 1 && (currentTime.hour() == alarm.hour())) {
-    openCurtain();
-  } else if (curtainState == 0 && lightLevel <= 150) {
-    closeCurtain();
-  }
-
-  // Make decisions based on what needs to be done
-
-
-
+//  if (curtainState == 1 && (currentTime.hour() == alarm.hour())) {
+//    openCurtain();
+//  } else if (curtainState == 0 && lightLevel <= 150) {
+//    closeCurtain();
+//  }
 }
 
 void lightPoll() {
@@ -147,19 +152,19 @@ void buttonPoll() {
   // openCurtain (spins the motor CCW)
   openCurtainState = digitalRead(openCurtainPin);
   curtainState = digitalRead(curtainPin);
-  while (openCurtainState == LOW && curtainState == HIGH) {
+  if (openCurtainState == LOW && curtainState == HIGH) {
     openCurtain();
-    openCurtainState = digitalRead(openCurtainPin);
-    curtainState = digitalRead(curtainPin);
+//    openCurtainState = digitalRead(openCurtainPin);
+//    curtainState = digitalRead(curtainPin);
   }
 
   // closeCurtain (spins the motor CW)
   closeCurtainState = digitalRead(closeCurtainPin);
   curtainState = digitalRead(curtainPin);
-  while (closeCurtainState == LOW && curtainState == HIGH) {
+  if (closeCurtainState == LOW && curtainState == HIGH) {
     closeCurtain();
-    closeCurtainState = digitalRead(closeCurtainPin);
-    curtainState = digitalRead(curtainPin);
+//    closeCurtainState = digitalRead(closeCurtainPin);
+//    curtainState = digitalRead(curtainPin);
   }
 
   // OK button
@@ -229,29 +234,48 @@ void udpateAlarmTime(DateTime alarm) {
 }
 
 void closeCurtain() {
-  digitalWrite(motStandby, 1);
-  digitalWrite(motIn1, 0);
-  digitalWrite(motIn2, 1);
-  int startTime = millis();
-  do {
+  digitalWrite(motStandby, HIGH);
+  digitalWrite(motIn1, LOW);
+  digitalWrite(motIn2, HIGH);
+  int t = millis();
+  while ((millis() - t) < 1000) {
     analogWrite(motPwm, 191);
-  } while ((millis() - startTime) < openTime);
-  digitalWrite(motStandby, 0);
-  curtainState = digitalRead(curtainPin);
+  }
+  digitalWrite(motStandby, LOW);
+}
+
+void closeCurtainFull() {
+  digitalWrite(motStandby, HIGH);
+  digitalWrite(motIn1, LOW);
+  digitalWrite(motIn2, HIGH);
+  int startTime = millis();
+  while ((millis() - startTime) < openTime && digitalRead(curtainPin) == HIGH); {
+    analogWrite(motPwm, 191);
+  }
+  digitalWrite(motStandby, LOW);
 }
 
 void openCurtain() {
-  digitalWrite(motStandby, 1);
-  digitalWrite(motIn1, 1);
-  digitalWrite(motIn2, 0);
+  digitalWrite(motStandby, HIGH);
+  digitalWrite(motIn1, HIGH);
+  digitalWrite(motIn2, LOW);
+  int t = millis();
+  while ((millis() - t) < 1000) {
+    analogWrite(motPwm, 191);
+  }
+  digitalWrite(motStandby, LOW);
+}
+
+void openCurtainFull() {
+  digitalWrite(motStandby, HIGH);
+  digitalWrite(motIn1, HIGH);
+  digitalWrite(motIn2, LOW);
   int startTime = millis();
   do {
     analogWrite(motPwm, 191);
-  } while (digitalRead(curtainPin) == 1);
+  } while (digitalRead(curtainPin) == HIGH);
   int endTime = millis();
   openTime = endTime - startTime;
-  digitalWrite(motStandby, 0);
-  curtainState = digitalRead(curtainPin);
+  digitalWrite(motStandby, LOW);
 }
-
 
