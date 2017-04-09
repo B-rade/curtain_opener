@@ -9,7 +9,7 @@ RTC_DS3231 rtc;
 // button pins
 const int hrUpPin = 2;
 const int hrDownPin = 3;
-const int minUpPin = 4;
+const int minUpPin = 0; %UPDATE THIS LINE TO SWITCH PIN
 const int minDownPin = 5;
 const int openCurtainPin = 6;
 const int closeCurtainPin = 7;
